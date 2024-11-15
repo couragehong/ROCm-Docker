@@ -1,6 +1,6 @@
 # ROCm Docker Environment
 
-This Docker environment is custom system setting dockerfile based on official [AMD ROCm docker repository](https://github.com/ROCm/ROCm-docker) to test and develop HIP kernels in various AMD GPU environment.
+This Docker environment is custom(?) setting dockerfile based on official [AMD ROCm Docker repository](https://github.com/ROCm/ROCm-docker) to test and develop HIP kernels in various AMD GPU environment.
 
 ## Prerequisites
 
