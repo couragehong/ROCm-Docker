@@ -1,0 +1,86 @@
+FROM ubuntu:22.04
+
+# Set ROCm version
+ENV ROCM_VERSION=6.2.4
+
+# Install base packages
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update -qq \
+    && apt-get install --no-install-recommends -y \
+        ca-certificates \
+        git \
+        locales-all \
+        make \
+        python3 \
+        sudo \
+        wget \
+        pkg-config \
+        glslang-tools \
+        libvulkan-dev \
+        vulkan-validationlayers \
+        libglfw3-dev \
+        gnupg \
+        g++ \
+        libelf1 \
+        libnuma-dev \
+        build-essential \
+        vim \
+        cmake-curses-gui \
+        kmod \
+        file \
+        python3-pip \
+        software-properties-common \
+        doxygen \
+        libomp-dev \
+        libssl-dev \
+        m4 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=en_US.utf8
+
+# Install ROCm
+RUN mkdir -p /etc/apt/keyrings \
+    && wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | gpg --dearmor > /etc/apt/keyrings/rocm.gpg \
+    && echo "deb [arch=amd64, signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/${ROCM_VERSION}/ jammy main" > /etc/apt/sources.list.d/rocm.list \
+    && printf 'Package: *\nPin: origin "repo.radeon.com"\nPin-Priority: 9001\n' > /etc/apt/preferences.d/radeon.pref \
+    && apt-get update -qq \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends -y \
+        hip-base \
+        hipify-clang \
+        rocm-core \
+        hipcc \
+        hip-dev \
+        rocm-hip-runtime-dev \
+        rocm-llvm-dev \
+        rocrand-dev \
+        hiprand-dev \
+        rocprim-dev \
+        hipcub-dev \
+        rocblas-dev \
+        hipblas-dev \
+        rocsolver-dev \
+        hipsolver-dev \
+        rocfft-dev \
+        hipfft-dev \
+        rocsparse-dev \
+        rocthrust-dev \
+        rocm-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install CMake
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-x86_64.sh \
+    && sh cmake-3.24.2-linux-x86_64.sh --skip-license --prefix=/usr/local \
+    && rm cmake-3.24.2-linux-x86_64.sh
+
+# Configure ROCm
+ENV PATH="/usr/local/bin:/opt/rocm/bin:${PATH}"
+ENV PATH="${PATH}:/opt/rocm/bin"
+
+RUN echo "/opt/rocm/lib" >> /etc/ld.so.conf.d/rocm.conf \
+    && ldconfig
+
+RUN useradd --create-home -G sudo,video --shell /bin/bash developer
+
+WORKDIR /root
+
+CMD ["bash", "-l"]

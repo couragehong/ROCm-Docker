@@ -1,0 +1,82 @@
+FROM ubuntu:20.04
+
+# Set environment variables
+ENV ROCM_VERSION=6.1.0
+ENV AMDGPU_VERSION=6.1
+
+# Install base packages
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update -qq \
+    && apt-get install --no-install-recommends -y \
+        ca-certificates \
+        curl \
+        gnupg \
+        sudo \
+        libelf1 \
+        libnuma-dev \
+        build-essential \
+        git \
+        vim-nox \
+        cmake-curses-gui \
+        kmod \
+        file \
+        python3 \
+        python3-pip \
+        software-properties-common \
+        wget \
+        doxygen \
+        g++-9 \
+        libomp-dev \
+        libssl-dev \
+        m4 \
+        make \
+    && ln -sf /usr/bin/g++-9 /usr/bin/g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV LANG=en_US.utf8
+
+# Install ROCm
+RUN curl -sL http://repo.radeon.com/rocm/rocm.gpg.key | apt-key add - \
+    && echo "deb [arch=amd64] http://repo.radeon.com/rocm/apt/${ROCM_VERSION}/ focal main" > /etc/apt/sources.list.d/rocm.list \
+    && echo "deb [arch=amd64] https://repo.radeon.com/amdgpu/${AMDGPU_VERSION}/ubuntu focal main" > /etc/apt/sources.list.d/amdgpu.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        hip-base \
+        hipify-clang \
+        rocm-core \
+        hipcc \
+        hip-dev \
+        rocm-hip-runtime-dev \
+        rocm-llvm-dev \
+        rocrand-dev \
+        hiprand-dev \
+        rocprim-dev \
+        hipcub-dev \
+        rocblas-dev \
+        hipblas-dev \
+        rocsolver-dev \
+        hipsolver-dev \
+        rocfft-dev \
+        hipfft-dev \
+        rocsparse-dev \
+        rocthrust-dev \
+        rocm-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install CMake
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.24.2/cmake-3.24.2-linux-x86_64.sh \
+    && sh cmake-3.24.2-linux-x86_64.sh --skip-license --prefix=/usr/local \
+    && rm cmake-3.24.2-linux-x86_64.sh
+
+#Configure ROCm
+ENV PATH="/usr/local/bin:/opt/rocm/bin:${PATH}"
+ENV PATH="${PATH}:/opt/rocm/bin"
+
+RUN echo "/opt/rocm/lib" >> /etc/ld.so.conf.d/rocm.conf \
+    && ldconfig
+
+RUN useradd --create-home -G sudo,video --shell /bin/bash developer
+
+WORKDIR /root
+
+CMD ["bash", "-l"]
